@@ -428,15 +428,17 @@
         .chart-period {
             display: flex;
             gap: 6px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         .chart-period button {
             background: var(--bg-input);
             border: 1px solid var(--border-color);
             color: var(--text-secondary);
-            padding: 6px 12px;
+            padding: 6px 10px;
             border-radius: 6px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -902,7 +904,11 @@
                         <div class="chart-period">
                             <button class="${chartPeriod === 7 ? 'active' : ''}" onclick="setChartPeriod(7)">7D</button>
                             <button class="${chartPeriod === 14 ? 'active' : ''}" onclick="setChartPeriod(14)">14D</button>
-                            <button class="${chartPeriod === 30 ? 'active' : ''}" onclick="setChartPeriod(30)">30D</button>
+                            <button class="${chartPeriod === 30 ? 'active' : ''}" onclick="setChartPeriod(30)">1M</button>
+                            <button class="${chartPeriod === 90 ? 'active' : ''}" onclick="setChartPeriod(90)">3M</button>
+                            <button class="${chartPeriod === 180 ? 'active' : ''}" onclick="setChartPeriod(180)">6M</button>
+                            <button class="${chartPeriod === 365 ? 'active' : ''}" onclick="setChartPeriod(365)">1Y</button>
+                            <button class="${chartPeriod === -1 ? 'active' : ''}" onclick="setChartPeriod(-1)">All</button>
                         </div>
                     </div>
                     <div class="chart-container">
@@ -988,16 +994,49 @@
             const dates = [];
             const totals = [];
             const today = new Date(currentDate);
-
-            for (let i = chartPeriod - 1; i >= 0; i--) {
+            
+            let daysToShow = chartPeriod;
+            
+            // Handle "All" option - find earliest entry date
+            if (chartPeriod === -1) {
+                const entryDates = Object.keys(entries).sort();
+                if (entryDates.length > 0) {
+                    const earliest = new Date(entryDates[0]);
+                    const diffTime = today - earliest;
+                    daysToShow = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                } else {
+                    daysToShow = 7; // Default to 7 days if no entries
+                }
+            }
+            
+            // For longer periods, show fewer data points for readability
+            let skipDays = 1;
+            if (daysToShow > 90) skipDays = Math.ceil(daysToShow / 90);
+            
+            for (let i = daysToShow - 1; i >= 0; i -= skipDays) {
                 const d = new Date(today);
                 d.setDate(d.getDate() - i);
                 const dateStr = d.toISOString().split('T')[0];
-                dates.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                
+                // Format date based on period length
+                let dateLabel;
+                if (daysToShow <= 30) {
+                    dateLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                } else if (daysToShow <= 180) {
+                    dateLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                } else {
+                    dateLabel = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+                }
+                
+                dates.push(dateLabel);
                 totals.push(calculateTotalPoints(entries[dateStr] || {}));
             }
 
             if (chart) chart.destroy();
+            
+            // Adjust point radius based on data points
+            const pointRadius = dates.length > 60 ? 1 : dates.length > 30 ? 2 : 4;
+            const pointHoverRadius = pointRadius + 2;
 
             chart = new Chart(ctx, {
                 type: 'line',
@@ -1012,8 +1051,8 @@
                         tension: 0.4,
                         pointBackgroundColor: '#00d4aa',
                         pointBorderColor: '#00d4aa',
-                        pointRadius: 4,
-                        pointHoverRadius: 6
+                        pointRadius: pointRadius,
+                        pointHoverRadius: pointHoverRadius
                     }]
                 },
                 options: {
@@ -1031,7 +1070,11 @@
                         },
                         x: {
                             grid: { display: false },
-                            ticks: { color: '#8b8b9e', maxRotation: 45 }
+                            ticks: { 
+                                color: '#8b8b9e', 
+                                maxRotation: 45,
+                                maxTicksLimit: daysToShow > 60 ? 10 : 15
+                            }
                         }
                     }
                 }
@@ -1303,7 +1346,6 @@
             showToast('✓ Data synced from cloud');
         }
 
-        
         // Start the app
         init();
     </script>
