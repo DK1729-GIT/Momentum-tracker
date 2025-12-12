@@ -10,20 +10,20 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --bg-primary: #0a0a0f;
-            --bg-secondary: #12121a;
-            --bg-card: #1a1a24;
-            --bg-input: #22222e;
-            --text-primary: #f5f5f7;
-            --text-secondary: #8b8b9e;
-            --text-muted: #5a5a6e;
-            --accent-physical: #00d4aa;
-            --accent-intellectual: #7c6aff;
-            --accent-professional: #ff6b6b;
-            --accent-personal: #ffd166;
-            --border-color: #2a2a3a;
-            --success: #00d4aa;
-            --shadow: 0 4px 24px rgba(0,0,0,0.4);
+            --bg-primary: #f5f7fa;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --bg-input: #f0f2f5;
+            --text-primary: #1a1a2e;
+            --text-secondary: #5a5a7e;
+            --text-muted: #8b8b9e;
+            --accent-physical: #00a884;
+            --accent-intellectual: #6b5ce7;
+            --accent-professional: #e85a5a;
+            --accent-personal: #e6a800;
+            --border-color: #e0e4ea;
+            --success: #00a884;
+            --shadow: 0 2px 12px rgba(0,0,0,0.08);
         }
 
         * {
@@ -379,7 +379,7 @@
             width: 100%;
             background: linear-gradient(135deg, var(--accent-physical), #00b894);
             border: none;
-            color: var(--bg-primary);
+            color: #ffffff;
             padding: 16px;
             border-radius: 12px;
             font-family: inherit;
@@ -387,12 +387,12 @@
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 4px 20px rgba(0, 212, 170, 0.3);
+            box-shadow: 0 4px 20px rgba(0, 168, 132, 0.3);
         }
 
         .save-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 24px rgba(0, 212, 170, 0.4);
+            box-shadow: 0 6px 24px rgba(0, 168, 132, 0.4);
         }
 
         .save-btn:active {
@@ -458,7 +458,7 @@
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.5);
             z-index: 200;
             display: none;
             align-items: flex-end;
@@ -477,6 +477,7 @@
             border-radius: 20px 20px 0 0;
             overflow: hidden;
             animation: slideUp 0.3s ease;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
         }
 
         @keyframes slideUp {
@@ -536,6 +537,7 @@
             display: flex;
             gap: 10px;
             margin-bottom: 8px;
+            align-items: center;
         }
 
         .settings-item-row:last-child {
@@ -561,6 +563,41 @@
         .settings-input-small {
             width: 70px;
             flex: none;
+        }
+        
+        .btn-delete {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--accent-professional);
+            padding: 8px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .btn-delete:hover {
+            background: var(--accent-professional);
+            color: white;
+        }
+        
+        .btn-add-task {
+            width: 100%;
+            background: var(--bg-input);
+            border: 2px dashed var(--border-color);
+            color: var(--text-secondary);
+            padding: 12px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+        
+        .btn-add-task:hover {
+            border-color: var(--accent-physical);
+            color: var(--accent-physical);
         }
 
         .settings-btn-row {
@@ -590,7 +627,7 @@
             flex: 1;
             background: var(--accent-physical);
             border: none;
-            color: var(--bg-primary);
+            color: #ffffff;
             padding: 14px;
             border-radius: 10px;
             font-family: inherit;
@@ -598,6 +635,10 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+        }
+        
+        .btn-primary:hover {
+            opacity: 0.9;
         }
 
         /* Toast Notification */
@@ -725,6 +766,7 @@
         let currentDate = new Date().toISOString().split('T')[0];
         let chart = null;
         let chartPeriod = 7;
+        let expandedSections = new Set(['physical', 'intellectual', 'professional', 'personal']); // All expanded by default
 
         // Initialize App
         async function init() {
@@ -927,9 +969,10 @@
         function renderSection(section, dayEntry) {
             const sectionPoints = calculateSectionPoints(section, dayEntry);
             const percentage = (sectionPoints / section.maxPoints) * 100;
+            const isExpanded = expandedSections.has(section.id);
 
             return `
-                <div class="section ${section.id}" id="section-${section.id}">
+                <div class="section ${section.id} ${isExpanded ? 'expanded' : ''}" id="section-${section.id}">
                     <div class="section-header" onclick="toggleSection('${section.id}')">
                         <div class="section-title">
                             <div class="section-icon">${section.icon}</div>
@@ -956,7 +999,7 @@
 
             if (task.type === 'boolean') {
                 return `
-                    <div class="task">
+                    <div class="task" data-task-id="${task.id}">
                         <div class="task-header">
                             <div class="task-name">${task.name}</div>
                             <div class="task-points">${points}/${task.maxPoints} pts</div>
@@ -971,7 +1014,7 @@
                 `;
             } else {
                 return `
-                    <div class="task">
+                    <div class="task" data-task-id="${task.id}">
                         <div class="task-header">
                             <div class="task-name">${task.name}</div>
                             <div class="task-points">${points.toFixed(1)}/${task.maxPoints} pts</div>
@@ -1045,12 +1088,12 @@
                     datasets: [{
                         label: 'Momentum',
                         data: totals,
-                        borderColor: '#00d4aa',
-                        backgroundColor: 'rgba(0, 212, 170, 0.1)',
+                        borderColor: '#00a884',
+                        backgroundColor: 'rgba(0, 168, 132, 0.15)',
                         fill: true,
                         tension: 0.4,
-                        pointBackgroundColor: '#00d4aa',
-                        pointBorderColor: '#00d4aa',
+                        pointBackgroundColor: '#00a884',
+                        pointBorderColor: '#00a884',
                         pointRadius: pointRadius,
                         pointHoverRadius: pointHoverRadius
                     }]
@@ -1065,13 +1108,13 @@
                         y: {
                             min: 0,
                             max: 100,
-                            grid: { color: 'rgba(255,255,255,0.05)' },
-                            ticks: { color: '#8b8b9e' }
+                            grid: { color: 'rgba(0,0,0,0.06)' },
+                            ticks: { color: '#5a5a7e' }
                         },
                         x: {
                             grid: { display: false },
                             ticks: { 
-                                color: '#8b8b9e', 
+                                color: '#5a5a7e', 
                                 maxRotation: 45,
                                 maxTicksLimit: daysToShow > 60 ? 10 : 15
                             }
@@ -1083,6 +1126,11 @@
 
         // Event Handlers
         function toggleSection(sectionId) {
+            if (expandedSections.has(sectionId)) {
+                expandedSections.delete(sectionId);
+            } else {
+                expandedSections.add(sectionId);
+            }
             const el = document.getElementById(`section-${sectionId}`);
             el.classList.toggle('expanded');
         }
@@ -1091,14 +1139,64 @@
             if (!entries[currentDate]) entries[currentDate] = {};
             entries[currentDate][taskId] = !entries[currentDate][taskId];
             saveLocal();
-            render();
+            updateScoresDisplay();
         }
 
         function updateValue(taskId, value) {
             if (!entries[currentDate]) entries[currentDate] = {};
             entries[currentDate][taskId] = parseFloat(value) || 0;
             saveLocal();
-            render();
+            updateScoresDisplay();
+        }
+        
+        // Update only scores without re-rendering entire page
+        function updateScoresDisplay() {
+            const dayEntry = entries[currentDate] || {};
+            const totalPoints = calculateTotalPoints(dayEntry);
+            
+            // Update total score
+            const totalScoreEl = document.querySelector('.total-score-value');
+            if (totalScoreEl) totalScoreEl.textContent = totalPoints.toFixed(0);
+            
+            const scoreBarEl = document.querySelector('.score-bar');
+            if (scoreBarEl) scoreBarEl.style.width = totalPoints + '%';
+            
+            // Update section scores
+            config.sections.forEach(section => {
+                const sectionPoints = calculateSectionPoints(section, dayEntry);
+                const percentage = (sectionPoints / section.maxPoints) * 100;
+                
+                const sectionEl = document.getElementById(`section-${section.id}`);
+                if (sectionEl) {
+                    const scoreValueEl = sectionEl.querySelector('.section-score-value');
+                    if (scoreValueEl) scoreValueEl.textContent = `${sectionPoints.toFixed(1)}/${section.maxPoints}`;
+                    
+                    const progressBarEl = sectionEl.querySelector('.section-progress-bar');
+                    if (progressBarEl) progressBarEl.style.width = percentage + '%';
+                    
+                    // Update individual task points
+                    section.tasks.forEach(task => {
+                        const taskValue = dayEntry?.[task.id] ?? (task.type === 'boolean' ? false : 0);
+                        const taskPoints = calculateTaskPoints(task, taskValue);
+                        const taskEl = sectionEl.querySelector(`[data-task-id="${task.id}"] .task-points`);
+                        if (taskEl) taskEl.textContent = `${task.type === 'boolean' ? taskPoints : taskPoints.toFixed(1)}/${task.maxPoints} pts`;
+                        
+                        // Update toggle state for boolean tasks
+                        if (task.type === 'boolean') {
+                            const toggleEl = sectionEl.querySelector(`[data-task-id="${task.id}"] .toggle`);
+                            const labelEl = sectionEl.querySelector(`[data-task-id="${task.id}"] .toggle-label`);
+                            if (toggleEl) {
+                                if (taskValue) {
+                                    toggleEl.classList.add('active');
+                                } else {
+                                    toggleEl.classList.remove('active');
+                                }
+                            }
+                            if (labelEl) labelEl.textContent = taskValue ? 'Yes' : 'No';
+                        }
+                    });
+                }
+            });
         }
 
         function changeDate(date) {
@@ -1162,11 +1260,19 @@
                             <div class="settings-section">
                                 <div class="settings-section-title">${section.icon} ${section.name} (Max: ${section.maxPoints} pts)</div>
                                 ${section.tasks.map(task => `
-                                    <div class="settings-item">
-                                        <div class="settings-item-row">
-                                            <input class="settings-input" value="${task.name}" 
+                                    <div class="settings-item" id="settings-task-${task.id}">
+                                        <div class="settings-item-row" style="justify-content: space-between;">
+                                            <input class="settings-input" value="${task.name}" style="flex: 1;"
                                                    onchange="updateTaskConfig('${section.id}', '${task.id}', 'name', this.value)"
                                                    placeholder="Task name">
+                                            <button class="btn-delete" onclick="deleteTask('${section.id}', '${task.id}')" title="Delete task">🗑️</button>
+                                        </div>
+                                        <div class="settings-item-row">
+                                            <span style="color: var(--text-secondary); font-size: 0.85rem; width: 50px;">Type:</span>
+                                            <select class="settings-input" style="width: auto;" onchange="updateTaskConfig('${section.id}', '${task.id}', 'type', this.value)">
+                                                <option value="number" ${task.type === 'number' ? 'selected' : ''}>Number</option>
+                                                <option value="boolean" ${task.type === 'boolean' ? 'selected' : ''}>Yes/No</option>
+                                            </select>
                                         </div>
                                         ${task.type === 'number' ? `
                                             <div class="settings-item-row">
@@ -1200,6 +1306,7 @@
                                         `}
                                     </div>
                                 `).join('')}
+                                <button class="btn-add-task" onclick="addTask('${section.id}')">+ Add Task</button>
                             </div>
                         `).join('')}
                         
@@ -1259,9 +1366,51 @@
             const task = section.tasks.find(t => t.id === taskId);
             if (field === 'pointsPer' || field === 'perUnit' || field === 'maxPoints') {
                 task[field] = parseFloat(value) || 0;
+            } else if (field === 'type') {
+                task[field] = value;
+                // Set defaults when switching type
+                if (value === 'number' && !task.unit) {
+                    task.unit = 'units';
+                    task.pointsPer = 1;
+                    task.perUnit = 1;
+                }
+                // Re-render settings to show correct fields
+                closeSettings();
+                openSettings();
             } else {
                 task[field] = value;
             }
+        }
+        
+        function addTask(sectionId) {
+            const section = config.sections.find(s => s.id === sectionId);
+            const newId = 'task_' + Date.now();
+            const newTask = {
+                id: newId,
+                name: 'New Task',
+                type: 'number',
+                unit: 'units',
+                maxPoints: 5,
+                pointsPer: 1,
+                perUnit: 1
+            };
+            section.tasks.push(newTask);
+            // Re-render settings to show new task
+            closeSettings();
+            openSettings();
+            showToast('✓ Task added - configure it above');
+        }
+        
+        function deleteTask(sectionId, taskId) {
+            if (!confirm('Delete this task? Historical data for this task will be preserved.')) {
+                return;
+            }
+            const section = config.sections.find(s => s.id === sectionId);
+            section.tasks = section.tasks.filter(t => t.id !== taskId);
+            // Re-render settings
+            closeSettings();
+            openSettings();
+            showToast('✓ Task deleted');
         }
 
         async function saveSettings() {
