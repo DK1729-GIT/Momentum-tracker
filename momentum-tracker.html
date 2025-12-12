@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Momentum Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --bg-input: #22222e;
+            --text-primary: #f5f5f7;
+            --text-secondary: #8b8b9e;
+            --text-muted: #5a5a6e;
+            --accent-physical: #00d4aa;
+            --accent-intellectual: #7c6aff;
+            --accent-professional: #ff6b6b;
+            --accent-personal: #ffd166;
+            --border-color: #2a2a3a;
+            --success: #00d4aa;
+            --shadow: 0 4px 24px rgba(0,0,0,0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding-bottom: 100px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+            padding: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .logo {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.1rem;
+            color: var(--accent-physical);
+            letter-spacing: -1px;
+        }
+
+        .settings-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .settings-btn:hover {
+            background: var(--bg-input);
+            color: var(--text-primary);
+        }
+
+        .date-selector {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .date-selector input {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            flex: 1;
+        }
+
+        .date-nav {
+            display: flex;
+            gap: 6px;
+        }
+
+        .date-nav button {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.2s;
+        }
+
+        .date-nav button:hover {
+            background: var(--bg-input);
+            color: var(--text-primary);
+        }
+
+        /* Total Score Display */
+        .total-score {
+            background: var(--bg-card);
+            margin: 20px;
+            padding: 24px;
+            border-radius: 16px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .total-score-value {
+            font-family: 'Space Mono', monospace;
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-physical), var(--accent-intellectual));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+        }
+
+        .total-score-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .score-bar-container {
+            margin-top: 16px;
+            background: var(--bg-input);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .score-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-physical), var(--accent-intellectual), var(--accent-professional), var(--accent-personal));
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        /* Section Cards */
+        .section {
+            margin: 16px 20px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .section-header {
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .section-header:hover {
+            background: var(--bg-input);
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .section-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .section.physical .section-icon { background: rgba(0, 212, 170, 0.15); }
+        .section.intellectual .section-icon { background: rgba(124, 106, 255, 0.15); }
+        .section.professional .section-icon { background: rgba(255, 107, 107, 0.15); }
+        .section.personal .section-icon { background: rgba(255, 209, 102, 0.15); }
+
+        .section-score {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-score-value {
+            font-family: 'Space Mono', monospace;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .section.physical .section-score-value { color: var(--accent-physical); }
+        .section.intellectual .section-score-value { color: var(--accent-intellectual); }
+        .section.professional .section-score-value { color: var(--accent-professional); }
+        .section.personal .section-score-value { color: var(--accent-personal); }
+
+        .section-progress {
+            width: 60px;
+            height: 6px;
+            background: var(--bg-input);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .section-progress-bar {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .section.physical .section-progress-bar { background: var(--accent-physical); }
+        .section.intellectual .section-progress-bar { background: var(--accent-intellectual); }
+        .section.professional .section-progress-bar { background: var(--accent-professional); }
+        .section.personal .section-progress-bar { background: var(--accent-personal); }
+
+        .section-content {
+            padding: 0 20px 20px;
+            display: none;
+        }
+
+        .section.expanded .section-content {
+            display: block;
+        }
+
+        .section-chevron {
+            color: var(--text-muted);
+            transition: transform 0.2s;
+        }
+
+        .section.expanded .section-chevron {
+            transform: rotate(180deg);
+        }
+
+        /* Task Items */
+        .task {
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .task:last-child {
+            border-bottom: none;
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .task-name {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .task-points {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .task-input-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .task-input {
+            flex: 1;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .task-input:focus {
+            outline: none;
+            border-color: var(--accent-physical);
+        }
+
+        .task-input[type="number"] {
+            width: 100px;
+            flex: none;
+        }
+
+        /* Toggle Switch */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toggle {
+            position: relative;
+            width: 52px;
+            height: 28px;
+            background: var(--bg-input);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: 1px solid var(--border-color);
+        }
+
+        .toggle.active {
+            background: var(--accent-physical);
+            border-color: var(--accent-physical);
+        }
+
+        .toggle-knob {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: var(--text-primary);
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+
+        .toggle.active .toggle-knob {
+            transform: translateX(24px);
+        }
+
+        .toggle-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .toggle.active + .toggle-label {
+            color: var(--accent-physical);
+        }
+
+        /* Save Button */
+        .save-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px 20px;
+            background: linear-gradient(transparent, var(--bg-primary) 20%);
+            z-index: 100;
+        }
+
+        .save-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent-physical), #00b894);
+            border: none;
+            color: var(--bg-primary);
+            padding: 16px;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 20px rgba(0, 212, 170, 0.3);
+        }
+
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(0, 212, 170, 0.4);
+        }
+
+        .save-btn:active {
+            transform: translateY(0);
+        }
+
+        .save-btn.saving {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* Chart Section */
+        .chart-section {
+            margin: 20px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .chart-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .chart-period {
+            display: flex;
+            gap: 6px;
+        }
+
+        .chart-period button {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .chart-period button.active {
+            background: var(--accent-physical);
+            color: var(--bg-primary);
+            border-color: var(--accent-physical);
+        }
+
+        .chart-container {
+            height: 200px;
+            position: relative;
+        }
+
+        /* Settings Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 200;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            width: 100%;
+            max-width: 500px;
+            max-height: 85vh;
+            border-radius: 20px 20px 0 0;
+            overflow: hidden;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            max-height: calc(85vh - 70px);
+        }
+
+        .settings-section {
+            margin-bottom: 24px;
+        }
+
+        .settings-section-title {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .settings-item {
+            background: var(--bg-card);
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .settings-item-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .settings-item-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .settings-input {
+            flex: 1;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+
+        .settings-input:focus {
+            outline: none;
+            border-color: var(--accent-physical);
+        }
+
+        .settings-input-small {
+            width: 70px;
+            flex: none;
+        }
+
+        .settings-btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-secondary {
+            flex: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 14px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-input);
+        }
+
+        .btn-primary {
+            flex: 1;
+            background: var(--accent-physical);
+            border: none;
+            color: var(--bg-primary);
+            padding: 14px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            padding: 14px 24px;
+            border-radius: 10px;
+            border: 1px solid var(--accent-physical);
+            box-shadow: var(--shadow);
+            z-index: 300;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Loading State */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--bg-card);
+            border-top-color: var(--accent-physical);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (min-width: 600px) {
+            body {
+                max-width: 500px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="loading">
+            <div class="spinner"></div>
+            <div style="color: var(--text-secondary);">Loading your momentum...</div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Storage Configuration
+        // Using localStorage as primary storage
+        // For cross-device sync, you can use the Export/Import feature
+        // Or set up your own JSONBin account (instructions in Settings)
+
+        // Default Configuration
+        const DEFAULT_CONFIG = {
+            sections: [
+                {
+                    id: 'physical',
+                    name: 'Physical Wealth',
+                    icon: '🏃',
+                    maxPoints: 40,
+                    tasks: [
+                        { id: 'water', name: 'Water Intake', type: 'number', unit: 'litres', maxPoints: 5, pointsPer: 1.5, perUnit: 1 },
+                        { id: 'exercise', name: 'Adequate Exercise', type: 'number', unit: 'minutes', maxPoints: 15, pointsPer: 1, perUnit: 2 },
+                        { id: 'sleep', name: 'Quality Sleep', type: 'number', unit: 'hours', maxPoints: 10, pointsPer: 1.25, perUnit: 1 },
+                        { id: 'nojunk', name: 'No Junk Food', type: 'boolean', maxPoints: 5 },
+                        { id: 'protein', name: 'Protein/Fibre Intake', type: 'boolean', maxPoints: 5 }
+                    ]
+                },
+                {
+                    id: 'intellectual',
+                    name: 'Intellectual Wealth',
+                    icon: '📚',
+                    maxPoints: 20,
+                    tasks: [
+                        { id: 'article', name: 'Business Article', type: 'number', unit: 'minutes', maxPoints: 12, pointsPer: 1, perUnit: 1 },
+                        { id: 'journal', name: 'ICAI or Equal Journal', type: 'number', unit: 'articles', maxPoints: 8, pointsPer: 4, perUnit: 1 }
+                    ]
+                },
+                {
+                    id: 'professional',
+                    name: 'Professional Wealth',
+                    icon: '💼',
+                    maxPoints: 20,
+                    tasks: [
+                        { id: 'tasks', name: 'Task Closures', type: 'number', unit: 'tasks', maxPoints: 20, pointsPer: 5, perUnit: 1 },
+                        { id: 'sop', name: 'Standardisation', type: 'number', unit: 'SOPs', maxPoints: 5, pointsPer: 5, perUnit: 1 },
+                        { id: 'outreach', name: 'Client Outreach', type: 'number', unit: 'clients', maxPoints: 5, pointsPer: 5, perUnit: 1 }
+                    ]
+                },
+                {
+                    id: 'personal',
+                    name: 'Personal Wealth',
+                    icon: '🏠',
+                    maxPoints: 20,
+                    tasks: [
+                        { id: 'family', name: 'Quality Time with Family', type: 'number', unit: 'hours', maxPoints: 20, pointsPer: 10, perUnit: 2 }
+                    ]
+                }
+            ]
+        };
+
+        // App State
+        let config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+        let entries = {};
+        let currentDate = new Date().toISOString().split('T')[0];
+        let chart = null;
+        let chartPeriod = 7;
+
+        // Initialize App
+        async function init() {
+            // Try to load from localStorage first for instant display
+            const localData = localStorage.getItem('momentum_data');
+            if (localData) {
+                const parsed = JSON.parse(localData);
+                config = parsed.config || config;
+                entries = parsed.entries || {};
+                BIN_ID = parsed.binId || null;
+            }
+
+            // Render immediately with local data
+            render();
+
+            // Then sync with cloud
+            await syncFromCloud();
+            render();
+        }
+
+        // Cloud Sync Functions using JSONBin.io
+        const JSONBIN_API = 'https://api.jsonbin.io/v3';
+        
+        function getCloudConfig() {
+            const masterKey = localStorage.getItem('jsonbin_master_key');
+            const binId = localStorage.getItem('jsonbin_bin_id');
+            return { masterKey, binId };
+        }
+
+        function isCloudConfigured() {
+            const { masterKey, binId } = getCloudConfig();
+            return masterKey && binId;
+        }
+
+        async function syncFromCloud() {
+            if (!isCloudConfigured()) return;
+            
+            const { masterKey, binId } = getCloudConfig();
+            
+            try {
+                const response = await fetch(`${JSONBIN_API}/b/${binId}/latest`, {
+                    headers: { 'X-Master-Key': masterKey }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.record) {
+                        // Merge cloud data with local (cloud takes precedence)
+                        if (data.record.config) config = data.record.config;
+                        if (data.record.entries) entries = { ...entries, ...data.record.entries };
+                        saveLocal();
+                    }
+                }
+            } catch (error) {
+                console.log('Cloud sync failed:', error);
+            }
+        }
+
+        async function saveToCloud() {
+            if (!isCloudConfigured()) {
+                showToast('✓ Saved locally');
+                return;
+            }
+
+            const { masterKey, binId } = getCloudConfig();
+
+            try {
+                const response = await fetch(`${JSONBIN_API}/b/${binId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': masterKey
+                    },
+                    body: JSON.stringify({ config, entries })
+                });
+
+                if (response.ok) {
+                    showToast('✓ Synced to cloud');
+                } else {
+                    throw new Error('Save failed');
+                }
+            } catch (error) {
+                console.log('Cloud save failed:', error);
+                showToast('✓ Saved locally');
+            }
+        }
+
+        async function createNewBin(masterKey) {
+            try {
+                const response = await fetch(`${JSONBIN_API}/b`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': masterKey,
+                        'X-Bin-Name': 'momentum-tracker'
+                    },
+                    body: JSON.stringify({ config, entries })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.metadata.id;
+                }
+                return null;
+            } catch (error) {
+                console.log('Failed to create bin:', error);
+                return null;
+            }
+        }
+
+        function saveLocal() {
+            localStorage.setItem('momentum_data', JSON.stringify({ config, entries }));
+        }
+
+        // Calculate Points
+        function calculateTaskPoints(task, value) {
+            if (task.type === 'boolean') {
+                return value ? task.maxPoints : 0;
+            } else {
+                const points = (value / task.perUnit) * task.pointsPer;
+                return Math.min(points, task.maxPoints);
+            }
+        }
+
+        function calculateSectionPoints(section, dayEntry) {
+            let total = 0;
+            section.tasks.forEach(task => {
+                const value = dayEntry?.[task.id] ?? 0;
+                total += calculateTaskPoints(task, value);
+            });
+            return Math.min(total, section.maxPoints);
+        }
+
+        function calculateTotalPoints(dayEntry) {
+            let total = 0;
+            config.sections.forEach(section => {
+                total += calculateSectionPoints(section, dayEntry);
+            });
+            return Math.min(total, 100);
+        }
+
+        // Render Functions
+        function render() {
+            const dayEntry = entries[currentDate] || {};
+            const totalPoints = calculateTotalPoints(dayEntry);
+
+            const app = document.getElementById('app');
+            app.innerHTML = `
+                <div class="header">
+                    <div class="header-top">
+                        <div class="logo">MOMENTUM</div>
+                        <button class="settings-btn" onclick="openSettings()">⚙️ Settings</button>
+                    </div>
+                    <div class="date-selector">
+                        <input type="date" value="${currentDate}" onchange="changeDate(this.value)">
+                        <div class="date-nav">
+                            <button onclick="changeDate(getPrevDate())">&lt;</button>
+                            <button onclick="changeDate(getToday())">•</button>
+                            <button onclick="changeDate(getNextDate())">&gt;</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="total-score">
+                    <div class="total-score-value">${totalPoints.toFixed(0)}</div>
+                    <div class="total-score-label">Daily Momentum Score</div>
+                    <div class="score-bar-container">
+                        <div class="score-bar" style="width: ${totalPoints}%"></div>
+                    </div>
+                </div>
+
+                ${config.sections.map(section => renderSection(section, dayEntry)).join('')}
+
+                <div class="chart-section">
+                    <div class="chart-header">
+                        <div class="chart-title">📈 Momentum Trend</div>
+                        <div class="chart-period">
+                            <button class="${chartPeriod === 7 ? 'active' : ''}" onclick="setChartPeriod(7)">7D</button>
+                            <button class="${chartPeriod === 14 ? 'active' : ''}" onclick="setChartPeriod(14)">14D</button>
+                            <button class="${chartPeriod === 30 ? 'active' : ''}" onclick="setChartPeriod(30)">30D</button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="momentumChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="save-container">
+                    <button class="save-btn" onclick="saveEntry()">💾 Save Today's Progress</button>
+                </div>
+            `;
+
+            renderChart();
+        }
+
+        function renderSection(section, dayEntry) {
+            const sectionPoints = calculateSectionPoints(section, dayEntry);
+            const percentage = (sectionPoints / section.maxPoints) * 100;
+
+            return `
+                <div class="section ${section.id}" id="section-${section.id}">
+                    <div class="section-header" onclick="toggleSection('${section.id}')">
+                        <div class="section-title">
+                            <div class="section-icon">${section.icon}</div>
+                            <span>${section.name}</span>
+                        </div>
+                        <div class="section-score">
+                            <div class="section-progress">
+                                <div class="section-progress-bar" style="width: ${percentage}%"></div>
+                            </div>
+                            <div class="section-score-value">${sectionPoints.toFixed(1)}/${section.maxPoints}</div>
+                            <div class="section-chevron">▼</div>
+                        </div>
+                    </div>
+                    <div class="section-content">
+                        ${section.tasks.map(task => renderTask(task, dayEntry)).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTask(task, dayEntry) {
+            const value = dayEntry?.[task.id] ?? (task.type === 'boolean' ? false : 0);
+            const points = calculateTaskPoints(task, value);
+
+            if (task.type === 'boolean') {
+                return `
+                    <div class="task">
+                        <div class="task-header">
+                            <div class="task-name">${task.name}</div>
+                            <div class="task-points">${points}/${task.maxPoints} pts</div>
+                        </div>
+                        <div class="toggle-container">
+                            <div class="toggle ${value ? 'active' : ''}" onclick="toggleBoolean('${task.id}')">
+                                <div class="toggle-knob"></div>
+                            </div>
+                            <span class="toggle-label">${value ? 'Yes' : 'No'}</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="task">
+                        <div class="task-header">
+                            <div class="task-name">${task.name}</div>
+                            <div class="task-points">${points.toFixed(1)}/${task.maxPoints} pts</div>
+                        </div>
+                        <div class="task-input-row">
+                            <input type="number" class="task-input" value="${value}" 
+                                   min="0" step="0.5" placeholder="0"
+                                   onchange="updateValue('${task.id}', this.value)">
+                            <span style="color: var(--text-secondary); font-size: 0.85rem;">${task.unit}</span>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function renderChart() {
+            const ctx = document.getElementById('momentumChart');
+            if (!ctx) return;
+
+            const dates = [];
+            const totals = [];
+            const today = new Date(currentDate);
+
+            for (let i = chartPeriod - 1; i >= 0; i--) {
+                const d = new Date(today);
+                d.setDate(d.getDate() - i);
+                const dateStr = d.toISOString().split('T')[0];
+                dates.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                totals.push(calculateTotalPoints(entries[dateStr] || {}));
+            }
+
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Momentum',
+                        data: totals,
+                        borderColor: '#00d4aa',
+                        backgroundColor: 'rgba(0, 212, 170, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#00d4aa',
+                        pointBorderColor: '#00d4aa',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 100,
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#8b8b9e' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#8b8b9e', maxRotation: 45 }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Event Handlers
+        function toggleSection(sectionId) {
+            const el = document.getElementById(`section-${sectionId}`);
+            el.classList.toggle('expanded');
+        }
+
+        function toggleBoolean(taskId) {
+            if (!entries[currentDate]) entries[currentDate] = {};
+            entries[currentDate][taskId] = !entries[currentDate][taskId];
+            saveLocal();
+            render();
+        }
+
+        function updateValue(taskId, value) {
+            if (!entries[currentDate]) entries[currentDate] = {};
+            entries[currentDate][taskId] = parseFloat(value) || 0;
+            saveLocal();
+            render();
+        }
+
+        function changeDate(date) {
+            currentDate = date;
+            render();
+        }
+
+        function getToday() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        function getPrevDate() {
+            const d = new Date(currentDate);
+            d.setDate(d.getDate() - 1);
+            return d.toISOString().split('T')[0];
+        }
+
+        function getNextDate() {
+            const d = new Date(currentDate);
+            d.setDate(d.getDate() + 1);
+            return d.toISOString().split('T')[0];
+        }
+
+        function setChartPeriod(days) {
+            chartPeriod = days;
+            render();
+        }
+
+        async function saveEntry() {
+            const btn = document.querySelector('.save-btn');
+            btn.classList.add('saving');
+            btn.textContent = 'Saving...';
+
+            saveLocal();
+            await saveToCloud();
+
+            btn.classList.remove('saving');
+            btn.textContent = '💾 Save Today\'s Progress';
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        // Settings Modal
+        function openSettings() {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay active';
+            overlay.id = 'settingsModal';
+            overlay.innerHTML = `
+                <div class="modal">
+                    <div class="modal-header">
+                        <div class="modal-title">⚙️ Settings</div>
+                        <button class="modal-close" onclick="closeSettings()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        ${config.sections.map(section => `
+                            <div class="settings-section">
+                                <div class="settings-section-title">${section.icon} ${section.name} (Max: ${section.maxPoints} pts)</div>
+                                ${section.tasks.map(task => `
+                                    <div class="settings-item">
+                                        <div class="settings-item-row">
+                                            <input class="settings-input" value="${task.name}" 
+                                                   onchange="updateTaskConfig('${section.id}', '${task.id}', 'name', this.value)"
+                                                   placeholder="Task name">
+                                        </div>
+                                        ${task.type === 'number' ? `
+                                            <div class="settings-item-row">
+                                                <input type="number" class="settings-input settings-input-small" 
+                                                       value="${task.pointsPer}" step="0.25"
+                                                       onchange="updateTaskConfig('${section.id}', '${task.id}', 'pointsPer', this.value)"
+                                                       placeholder="Points">
+                                                <span style="color: var(--text-secondary); padding: 10px;">pts per</span>
+                                                <input type="number" class="settings-input settings-input-small" 
+                                                       value="${task.perUnit}" step="1"
+                                                       onchange="updateTaskConfig('${section.id}', '${task.id}', 'perUnit', this.value)"
+                                                       placeholder="Unit">
+                                                <input class="settings-input" value="${task.unit}" style="width: 80px;"
+                                                       onchange="updateTaskConfig('${section.id}', '${task.id}', 'unit', this.value)"
+                                                       placeholder="unit">
+                                            </div>
+                                            <div class="settings-item-row">
+                                                <span style="color: var(--text-secondary); padding: 10px; font-size: 0.85rem;">Max:</span>
+                                                <input type="number" class="settings-input settings-input-small" 
+                                                       value="${task.maxPoints}" step="1"
+                                                       onchange="updateTaskConfig('${section.id}', '${task.id}', 'maxPoints', this.value)">
+                                                <span style="color: var(--text-secondary); padding: 10px; font-size: 0.85rem;">pts</span>
+                                            </div>
+                                        ` : `
+                                            <div class="settings-item-row">
+                                                <span style="color: var(--text-secondary); padding: 10px; font-size: 0.85rem;">Points if Yes:</span>
+                                                <input type="number" class="settings-input settings-input-small" 
+                                                       value="${task.maxPoints}" step="1"
+                                                       onchange="updateTaskConfig('${section.id}', '${task.id}', 'maxPoints', this.value)">
+                                            </div>
+                                        `}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `).join('')}
+                        
+        <div class="settings-section">
+                            <div class="settings-section-title">☁️ Cloud Sync (Optional)</div>
+                            <div class="settings-item">
+                                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px;">
+                                    To sync across devices, create a free account at <a href="https://jsonbin.io" target="_blank" style="color: var(--accent-physical);">jsonbin.io</a>, 
+                                    get your Master Key from Account Settings, then create a bin or enter existing bin ID.
+                                </p>
+                                <div class="settings-item-row">
+                                    <input class="settings-input" id="masterKeyInput" type="password" 
+                                           value="${localStorage.getItem('jsonbin_master_key') || ''}"
+                                           placeholder="JSONBin Master Key">
+                                </div>
+                                <div class="settings-item-row">
+                                    <input class="settings-input" id="binIdInput" 
+                                           value="${localStorage.getItem('jsonbin_bin_id') || ''}"
+                                           placeholder="Bin ID (leave empty to create new)">
+                                </div>
+                                <div class="settings-btn-row" style="margin-top: 10px;">
+                                    <button class="btn-secondary" onclick="setupCloudSync()">
+                                        ${isCloudConfigured() ? '🔄 Update Sync' : '☁️ Enable Sync'}
+                                    </button>
+                                    ${isCloudConfigured() ? '<button class="btn-secondary" onclick="pullFromCloud()">⬇️ Pull from Cloud</button>' : ''}
+                                </div>
+                                ${isCloudConfigured() ? '<p style="color: var(--accent-physical); font-size: 0.8rem; margin-top: 8px;">✓ Cloud sync enabled</p>' : ''}
+                            </div>
+                        </div>
+                        
+                        <div class="settings-section">
+                            <div class="settings-section-title">📦 Data Management</div>
+                            <div class="settings-btn-row">
+                                <button class="btn-secondary" onclick="exportData()">Export Backup</button>
+                                <button class="btn-secondary" onclick="document.getElementById('importFile').click()">Import Data</button>
+                                <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)">
+                            </div>
+                        </div>
+
+                        <div class="settings-btn-row">
+                            <button class="btn-secondary" onclick="closeSettings()">Cancel</button>
+                            <button class="btn-primary" onclick="saveSettings()">Save Changes</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+
+        function closeSettings() {
+            const modal = document.getElementById('settingsModal');
+            if (modal) modal.remove();
+        }
+
+        function updateTaskConfig(sectionId, taskId, field, value) {
+            const section = config.sections.find(s => s.id === sectionId);
+            const task = section.tasks.find(t => t.id === taskId);
+            if (field === 'pointsPer' || field === 'perUnit' || field === 'maxPoints') {
+                task[field] = parseFloat(value) || 0;
+            } else {
+                task[field] = value;
+            }
+        }
+
+        async function saveSettings() {
+            saveLocal();
+            await saveToCloud();
+            closeSettings();
+            render();
+            showToast('✓ Settings saved');
+        }
+
+        function exportData() {
+            const data = JSON.stringify({ config, entries }, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `momentum-backup-${currentDate}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('✓ Backup downloaded');
+        }
+
+        function importData(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.config) config = data.config;
+                    if (data.entries) entries = { ...entries, ...data.entries };
+                    saveLocal();
+                    await saveToCloud();
+                    closeSettings();
+                    render();
+                    showToast('✓ Data imported');
+                } catch (error) {
+                    showToast('Import failed - invalid file');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function setupCloudSync() {
+            const masterKey = document.getElementById('masterKeyInput').value.trim();
+            let binId = document.getElementById('binIdInput').value.trim();
+
+            if (!masterKey) {
+                showToast('Please enter Master Key');
+                return;
+            }
+
+            // If no bin ID, create a new bin
+            if (!binId) {
+                showToast('Creating new bin...');
+                binId = await createNewBin(masterKey);
+                if (!binId) {
+                    showToast('Failed to create bin - check your key');
+                    return;
+                }
+                document.getElementById('binIdInput').value = binId;
+            }
+
+            // Save configuration
+            localStorage.setItem('jsonbin_master_key', masterKey);
+            localStorage.setItem('jsonbin_bin_id', binId);
+
+            // Push current data to cloud
+            await saveToCloud();
+            
+            closeSettings();
+            render();
+            showToast('✓ Cloud sync enabled! Bin ID: ' + binId.substring(0, 8) + '...');
+        }
+
+        async function pullFromCloud() {
+            showToast('Pulling from cloud...');
+            await syncFromCloud();
+            closeSettings();
+            render();
+            showToast('✓ Data synced from cloud');
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>
